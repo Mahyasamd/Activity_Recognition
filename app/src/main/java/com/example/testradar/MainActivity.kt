@@ -13,7 +13,6 @@ import android.hardware.SensorManager
 import android.net.wifi.ScanResult
 import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.os.Environment
 import android.util.Log
 import android.widget.Button
 import android.widget.Toast
@@ -206,6 +205,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         }
     }
 
+    private lateinit var stationaryButton: Button
+    private lateinit var walkingStraightButton: Button
+    private lateinit var walkingInACircleButton: Button
+    private lateinit var runningButton: Button
+    private lateinit var notClassifiedMovingButton: Button
+    private var movingType: String="notClassifiedMoving"
+
+
     private lateinit var sensorManager: SensorManager
     private lateinit var accelerometer: Sensor
     private lateinit var gyroscope: Sensor
@@ -213,14 +220,46 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private lateinit var writer: FileWriter
 
     private fun startRecording() {
+
+        stationaryButton = findViewById(R.id.Stationary)
+        walkingStraightButton= findViewById(R.id.WalkingStraight)
+        walkingInACircleButton= findViewById(R.id.WalkingInACircle)
+        runningButton= findViewById(R.id.Running)
+        notClassifiedMovingButton= findViewById(R.id.NotClassifiedMoving)
+
+        stationaryButton.setOnClickListener {
+            movingType="stationary"
+            Toast.makeText(this, "stationary", Toast.LENGTH_SHORT).show()
+        }
+        walkingStraightButton.setOnClickListener {
+            movingType="walkingStraight"
+            Toast.makeText(this, "walkingStraight", Toast.LENGTH_SHORT).show()
+        }
+        walkingInACircleButton.setOnClickListener {
+            movingType="walkingInACircle"
+            Toast.makeText(this, "walkingInACircle", Toast.LENGTH_SHORT).show()
+        }
+        runningButton.setOnClickListener {
+            movingType="running"
+            Toast.makeText(this, "running", Toast.LENGTH_SHORT).show()
+        }
+        notClassifiedMovingButton.setOnClickListener {
+            movingType=" notClassifiedMoving"
+            Toast.makeText(this, "notClassifiedMoving", Toast.LENGTH_SHORT).show()
+        }
+
+
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
         accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)!!
         gyroscope = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE)!!
         pressureSensor = sensorManager.getDefaultSensor(Sensor.TYPE_PRESSURE)!!
         try {
             val file = File(getExternalFilesDir(null), "sensor_data.csv")
-            writer = FileWriter(file)
-            writer.write("timestamp,accelerometer_x,accelerometer_y,accelerometer_z,gyroscope_x,gyroscope_y,gyroscope_z,pressure\n")
+            val appendMode = file.exists()
+            writer = FileWriter(file, appendMode)
+            if (!appendMode) {
+                writer.write("type,timestamp,accelerometer_x,accelerometer_y,accelerometer_z,gyroscope_x,gyroscope_y,gyroscope_z,pressure\n")
+            }
             sensorManager.registerListener(
                 this,
                 accelerometer,
@@ -246,17 +285,17 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 when (event.sensor.type) {
                     Sensor.TYPE_ACCELEROMETER -> {
                         writer.write(
-                            "$timestamp,${event.values[0]},${event.values[1]},${event.values[2]},,,,\n"
+                            "$movingType,$timestamp,${event.values[0]},${event.values[1]},${event.values[2]},,,,\n"
                         )
                     }
                     Sensor.TYPE_GYROSCOPE -> {
                         writer.write(
-                            "$timestamp,,,,${event.values[0]},${event.values[1]},${event.values[2]},\n"
+                            "$movingType,$timestamp,,,,${event.values[0]},${event.values[1]},${event.values[2]},\n"
                         )
                     }
                     Sensor.TYPE_PRESSURE -> {
                         writer.write(
-                            "$timestamp,,,,,,,${event.values[0]}\n"
+                            "$movingType,$timestamp,,,,,,,${event.values[0]}\n"
                         )
                     }
                 }
